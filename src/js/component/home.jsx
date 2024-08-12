@@ -6,47 +6,104 @@ const root = ReactDOM.createRoot(document.getElementById('app'));
 //create your first component
 let counter = 0
 let intervalId = null
+let isCountingDown  = false
+let alertValue = null
 const Home = ({counterValue}) => {
 
 	const startCounter = () => {
-		if(intervalId) return 
+		if(intervalId || isCountingDown ) return 
 
 		intervalId = setInterval(() => {
+			if(checkAlert()) return
 			counter += 1
 			renderApp(counter)
 		}, 1000)
 	}
 
+	const counterDown = () => {
+        if (intervalId || !isCountingDown) return;
 
-	//Funcion parar contador
+        intervalId = setInterval(() => {
+			if(checkAlert()) return
+            if (counter > 0) {
+                counter -= 1;
+                renderApp(counter);
+            } else {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }, 1000);
+    };
+
+
+	//Parar contador
 	const pauseCounter = () => {
 		clearInterval(intervalId)
 		intervalId = null
 	}
 
+	//Resetear contador
 	const resetCounter = () => {
+		isCountingDown = false
 		clearInterval(intervalId)
 		intervalId = null
 		counter = 0
 		renderApp(counter)
 	}
 
+	//Resumir contador
 	const resumeCounter = () => {
-		startCounter()
+		if (isCountingDown) {
+            counterDown(); // Reanuda la cuenta regresiva
+        } else {
+            startCounter(); // Reanuda el conteo ascendente
+        }
 	}
 
+	//Llamar al iniciar la app
 	React.useEffect(() => {
         startCounter();
         return () => clearInterval(intervalId);
     }, []);
 
+	//Funcion cuenta regresiva
+	const countdown = () => {
+		isCountingDown = true
+		let inputElement = document.getElementById("countdown")
+		clearInterval(intervalId)
+		intervalId = null
+		counter = parseInt(inputElement.value)
+		intervalId = setInterval(() => {
+			counter === 0 ? (resetCounter(), isCountingDown = false, intervalId = null) : renderApp(counter), counter-=1, checkAlert()
+		},1000)
+	}
+
+	//Funcion verificar alerta en cada actualizacion del estado
+	const checkAlert = () => {
+		
+		if (alertValue !== null && counter === alertValue) {
+            alert("¡Tiempo alcanzado!");
+			clearInterval(intervalId);
+            intervalId = null;
+            isCountingDown = false;
+			alertValue = null
+			return true
+        }
+		return false
+	}
+
+	//Funcion alerta
+	const alertFunction = () => {
+		let alertElement = document.getElementById("alert")
+		alertValue = parseInt(alertElement.value)
+	}
 
 	return(
 		<>
 			<div className="header">
 				<div className="back-count-section">
-					<button>Cuenta regresiva</button>
-					<input placeholder="Ingresar numero"></input>
+					<button onClick={countdown} >Cuenta regresiva</button>
+					<input id="countdown" placeholder="Ingresar numero"></input>
 				</div>
 				<div className="action-button-section">
 					<button onClick={pauseCounter}>Parar</button>
@@ -54,8 +111,8 @@ const Home = ({counterValue}) => {
 					<button onClick={resumeCounter}>Resumir</button>
 				</div>
 				<div className="alert-section">
-					<button>Crear alerta</button>
-					<input placeholder="Ingresar numero"></input>
+					<button onClick={alertFunction}>Crear alerta</button>
+					<input id="alert" placeholder="Ingresar numero"></input>
 				</div>
 			</div>
 			<div className="main">
